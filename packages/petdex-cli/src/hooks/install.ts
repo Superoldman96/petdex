@@ -61,10 +61,14 @@ export async function runInstall(): Promise<HooksInstallResult> {
     const { persistRunningBinary } = await import("./persist-binary");
     const result = await persistRunningBinary();
     if (!result.ok && result.reason) {
-      p.log.warn(`Could not persist petdex binary (${result.reason}). Bubbles will be disabled.`);
+      p.log.warn(
+        `Could not persist petdex binary (${result.reason}). Bubbles will be disabled.`,
+      );
     }
   } catch (err) {
-    p.log.warn(`Could not persist petdex binary (${(err as Error).message}). Bubbles will be disabled.`);
+    p.log.warn(
+      `Could not persist petdex binary (${(err as Error).message}). Bubbles will be disabled.`,
+    );
   }
 
   const detections = await detectAgents();
@@ -105,7 +109,7 @@ export async function runInstall(): Promise<HooksInstallResult> {
     const agent = AGENTS.find((a) => a.id === id);
     if (!agent) continue;
     try {
-      const result = await installForAgent(agent);
+      const _result = await installForAgent(agent);
       installedAgents.push(agent.id);
       // Keep summary lines short and uniform — earlier the long
       // backup filename + full config path made @clack/prompts'
@@ -267,7 +271,9 @@ function mergeHooks(
   const mergedHooks: Record<string, unknown[]> = { ...existingHooks };
 
   for (const [event, entries] of Object.entries(patchHooks)) {
-    const prior = Array.isArray(mergedHooks[event]) ? mergedHooks[event]! : [];
+    const prior = Array.isArray(mergedHooks[event])
+      ? (mergedHooks[event] as unknown[])
+      : [];
     const filteredPrior = prior.filter((entry) => !isPetdexEntry(entry));
     mergedHooks[event] = [...filteredPrior, ...entries];
   }
@@ -304,4 +310,3 @@ function collectCommands(entry: unknown): string[] {
   walk(entry);
   return acc;
 }
-

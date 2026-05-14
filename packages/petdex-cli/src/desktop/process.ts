@@ -19,11 +19,11 @@ import { desktopBinPath } from "./install.js";
 // goes through getpwuid()), so we prefer process.env.HOME when
 // set — same trick the telemetry module uses.
 function pidFile(): string {
-  const home = process.env.HOME ?? homedir();
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? homedir();
   return path.join(home, ".petdex", "desktop.pid");
 }
 function logFile(): string {
-  const home = process.env.HOME ?? homedir();
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? homedir();
   return path.join(home, ".petdex", "desktop.log");
 }
 
@@ -92,13 +92,57 @@ function processStartTime(pid: number): string | null {
   }
 }
 
+/**
+ * Check whether a process is alive by pid.
+ *
+ * On Windows: `tasklist /fi "PID eq <pid>"` is the POSIX-free
+ * equivalent of `ps -p`; we parse the CSV output for the pid string.
+ * On POSIX: `ps -p <pid>` exits 0 when the process exists.
+ *
+ * Exported so tests can verify the platform-specific branch.
+ */
+export function isPidAlive(pid: number): boolean {
+  if (process.platform === "win32") {
+    try {
+      const out = execFileSync(
+        "tasklist",
+        ["/fi", `PID eq ${pid}`, "/fo", "csv", "/nh"],
+        { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+      );
+      // tasklist outputs a CSV row if the process exists, or
+      // "INFO: No tasks are running..." if it does not. Checking
+      // for the pid string (as a quoted field) is reliable.
+      return out.includes(`"${pid}"`);
+    } catch {
+      return false;
+    }
+  }
+  // POSIX: ps exits non-zero when the pid is dead.
+  try {
+    execFileSync("ps", ["-p", String(pid)], {
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // True only if the live process at `pid` started at the same time as
 // the one we recorded. Pid recycle gives us either no live process
 // (lstart === null) or a different lstart, both of which fail this
 // check. Empty stored lstart (legacy pid file) is treated as failure
 // so we never blindly SIGTERM an unverified pid.
+//
+// On Windows we cannot get a process start-time without WMI, so we
+// fall back to a pure liveness check (isPidAlive). This removes the
+// pid-recycle guard on Windows; the risk is low because Windows pid
+// recycling is rare and the window between spawn and stop is short.
 function pidMatchesRecord(record: PidRecord): boolean {
   if (record.lstart.length === 0) return false;
+  if (process.platform === "win32") {
+    return isPidAlive(record.pid);
+  }
   const live = processStartTime(record.pid);
   return live !== null && live === record.lstart;
 }
@@ -182,7 +226,15 @@ export async function startDesktop(): Promise<StartResult> {
   // will see it. If `ps` fails for some reason (sandbox, missing PATH)
   // we still write the pid so legacy-path identity checks fail safe
   // (status() returns stale rather than running, no signal is sent).
-  const lstart = processStartTime(child.pid) ?? "";
+  //
+  // On Windows, `ps` is unavailable; we store a "win32" sentinel so
+  // pidMatchesRecord() can use isPidAlive() for liveness instead.
+  const lstart =
+    process.platform === "win32"
+      ? isPidAlive(child.pid)
+        ? "win32"
+        : ""
+      : (processStartTime(child.pid) ?? "");
   const record: PidRecord = { pid: child.pid, lstart };
   await writeFile(pidFile(), JSON.stringify(record));
   return { ok: true, pid: child.pid, alreadyRunning: false };
@@ -231,7 +283,12 @@ async function startViaOpen(appBundle: string): Promise<StartResult> {
     };
   }
 
-  const lstart = processStartTime(pid) ?? "";
+  const lstart =
+    process.platform === "win32"
+      ? isPidAlive(pid)
+        ? "win32"
+        : ""
+      : (processStartTime(pid) ?? "");
   const record: PidRecord = { pid, lstart };
   await writeFile(pidFile(), JSON.stringify(record));
   return { ok: true, pid, alreadyRunning: false };
@@ -296,7 +353,17 @@ export async function stopDesktop(
     };
   }
   try {
-    process.kill(pid, "SIGTERM");
+    if (process.platform === "win32") {
+      // SIGTERM via process.kill() maps to TerminateProcess() on Windows,
+      // which does not give the child a chance to clean up (no WM_QUIT).
+      // taskkill /t /f sends TerminateProcess to the whole process tree,
+      // which also kills the sidecar child — the desired behaviour.
+      execFileSync("taskkill", ["/pid", String(pid), "/t", "/f"], {
+        stdio: "ignore",
+      });
+    } else {
+      process.kill(pid, "SIGTERM");
+    }
   } catch (err) {
     clearPidFile();
     const code = (err as NodeJS.ErrnoException).code;

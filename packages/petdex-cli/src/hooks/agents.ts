@@ -526,7 +526,7 @@ function curlOnlyState(
   ].join(" ");
 }
 
-function curlCommand(
+function _curlCommand(
   agentId: Agent["id"],
   state: PetState,
   duration?: number,

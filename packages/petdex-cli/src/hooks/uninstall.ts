@@ -20,12 +20,7 @@ import path from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 
-import {
-  AGENTS,
-  type Agent,
-  PETDEX_PORT,
-  SIDECAR_URL,
-} from "./agents.js";
+import { AGENTS, type Agent, PETDEX_PORT, SIDECAR_URL } from "./agents.js";
 import { tokenPath } from "./killswitch.js";
 import { uninstallSlashCommand } from "./slash-command.js";
 
@@ -127,14 +122,16 @@ async function uninstallForAgent(agent: Agent): Promise<UninstallResult> {
   // path is OURS (we created it under plugins/petdex.js); it's safe
   // to remove without parsing.
   if (agent.id === "opencode") {
-    if (!existsSync(agent.configFile)) return { removed: false, backupPath: null };
+    if (!existsSync(agent.configFile))
+      return { removed: false, backupPath: null };
     const backupPath = await maybeBackup(agent.configFile);
     await rm(agent.configFile, { force: true });
     return { removed: true, backupPath };
   }
 
   // JSON-config agents: read, strip our entries, rewrite.
-  if (!existsSync(agent.configFile)) return { removed: false, backupPath: null };
+  if (!existsSync(agent.configFile))
+    return { removed: false, backupPath: null };
 
   let text: string;
   try {
@@ -174,9 +171,10 @@ async function uninstallForAgent(agent: Agent): Promise<UninstallResult> {
  * Empty event arrays AND an empty `hooks` object are removed too so
  * we don't leave stub keys behind.
  */
-export function stripPetdexHooks(
-  parsed: Record<string, unknown>,
-): { value: Record<string, unknown>; changed: boolean } {
+export function stripPetdexHooks(parsed: Record<string, unknown>): {
+  value: Record<string, unknown>;
+  changed: boolean;
+} {
   const out = { ...parsed };
   const hooks = out.hooks;
   if (!hooks || typeof hooks !== "object" || Array.isArray(hooks)) {
@@ -246,4 +244,3 @@ async function maybeBackup(file: string): Promise<string | null> {
   await writeFile(backup, content);
   return backup;
 }
-
