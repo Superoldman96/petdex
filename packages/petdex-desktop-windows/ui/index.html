@@ -147,7 +147,8 @@ async function boot() {
     const pet = await invoke("get_active_pet");
     if (!pet) { dbg("no pet found"); return; }
 
-    const b64 = await invoke("read_file_as_base64", { path: pet.sprite_path });
+    const b64 = await invoke("read_file_as_base64", { path: pet.sprite_path })
+      .catch((err) => { throw new Error(`spritesheet load failed: ${err}`); });
     const ext = pet.sprite_path.endsWith(".png") ? "png" : "webp";
     document.getElementById("sprite").style.setProperty(
       "--sprite-url",

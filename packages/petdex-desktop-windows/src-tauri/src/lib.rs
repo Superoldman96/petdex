@@ -29,6 +29,11 @@ impl Default for SidecarState {
 
 // ── Pet scanner ───────────────────────────────────────────────────────────────
 
+/// Spritesheet size cap — mirrors MAX_PET_BYTES in main.zig (16 MiB).
+/// Keeps listing behaviour in lockstep with the loader: a pet that
+/// would be rejected at load time is also excluded from the listing.
+const MAX_PET_BYTES: u64 = 16 * 1024 * 1024;
+
 fn pet_roots() -> Vec<PathBuf> {
     let mut roots = Vec::new();
     if let Some(home) = dirs::home_dir() {
@@ -36,6 +41,18 @@ fn pet_roots() -> Vec<PathBuf> {
         roots.push(home.join(".codex").join("pets"));
     }
     roots
+}
+
+/// True only when the pet directory contains a spritesheet file that
+/// is within MAX_PET_BYTES. Mirrors hasSpritesheet() in main.zig.
+fn has_valid_spritesheet(pet_dir: &PathBuf) -> bool {
+    for fname in &["spritesheet.webp", "spritesheet.png"] {
+        let p = pet_dir.join(fname);
+        if let Ok(meta) = fs::metadata(&p) {
+            return meta.len() <= MAX_PET_BYTES;
+        }
+    }
+    false
 }
 
 fn load_pet_from_dir(slug: &str, dir: &PathBuf) -> Option<PetMeta> {
@@ -53,7 +70,7 @@ fn load_pet_from_dir(slug: &str, dir: &PathBuf) -> Option<PetMeta> {
         .unwrap_or(slug)
         .to_string();
 
-    let sprite_path = ["spritesheet.webp", "spritesheet.png", "sprite.webp", "sprite.png"]
+    let sprite_path = ["spritesheet.webp", "spritesheet.png"]
         .iter()
         .find_map(|fname| {
             let p = pet_dir.join(fname);
@@ -61,6 +78,15 @@ fn load_pet_from_dir(slug: &str, dir: &PathBuf) -> Option<PetMeta> {
         })?;
 
     Some(PetMeta { slug: slug.to_string(), name, sprite_path })
+}
+
+/// Read the active slug from ~/.petdex/active.json ({"slug":"<slug>"}).
+/// Returns None if the file is absent, unreadable, or malformed.
+fn read_active_slug() -> Option<String> {
+    let path = dirs::home_dir()?.join(".petdex").join("active.json");
+    let raw = fs::read_to_string(&path).ok()?;
+    let val: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    val.get("slug").and_then(|v| v.as_str()).map(|s| s.to_string())
 }
 
 // ── Sidecar helpers ───────────────────────────────────────────────────────────
@@ -137,15 +163,18 @@ fn read_runtime_info() -> Option<(u16, String)> {
 // ── Tauri commands — pet ──────────────────────────────────────────────────────
 
 /// Return the slugs of all pets found under ~/.petdex/pets and ~/.codex/pets.
+/// Only includes pets that have a valid spritesheet within MAX_PET_BYTES,
+/// matching the filtering logic in main.zig's hasSpritesheet().
 #[tauri::command]
 fn list_pets() -> Vec<String> {
     let mut slugs = Vec::new();
     for root in pet_roots() {
         if let Ok(entries) = fs::read_dir(&root) {
             for entry in entries.flatten() {
-                if entry.path().is_dir() {
+                let path = entry.path();
+                if path.is_dir() {
                     if let Some(name) = entry.file_name().to_str() {
-                        if entry.path().join("pet.json").exists() {
+                        if path.join("pet.json").exists() && has_valid_spritesheet(&path) {
                             slugs.push(name.to_string());
                         }
                     }
@@ -169,45 +198,47 @@ fn get_pet(slug: String) -> Option<PetMeta> {
     None
 }
 
-/// Return the active pet from ~/.petdex/runtime/state.json, or the first installed pet.
+/// Return the active pet: reads ~/.petdex/active.json first, then falls
+/// back to the first slug in list_pets(). Mirrors main.zig's startup logic.
 #[tauri::command]
 fn get_active_pet() -> Option<PetMeta> {
-    let runtime_path = dirs::home_dir()?.join(".petdex").join("runtime").join("state.json");
-    let active_slug: Option<String> = if runtime_path.exists() {
-        let raw = fs::read_to_string(&runtime_path).ok()?;
-        let val: serde_json::Value = serde_json::from_str(&raw).ok()?;
-        val.get("active_pet").and_then(|v| v.as_str()).map(|s| s.to_string())
-    } else {
-        None
-    };
-
-    if let Some(slug) = active_slug {
+    if let Some(slug) = read_active_slug() {
         if let Some(meta) = get_pet(slug) {
             return Some(meta);
         }
     }
-
     let slugs = list_pets();
     slugs.first().and_then(|s| get_pet(s.clone()))
 }
 
-/// Read a file and return its contents as a base64 string.
-/// Restricted to paths inside the user's home directory to prevent path traversal.
+/// Read a spritesheet and return its contents as a base64 string.
+///
+/// Security restrictions (both must hold):
+///   1. Canonical path must be inside one of the known pet roots
+///      (~/.petdex/pets/ or ~/.codex/pets/). This closes the path-traversal
+///      window: JS in the WebView cannot escape to arbitrary files.
+///   2. File size must be ≤ MAX_PET_BYTES (16 MiB). Mirrors the loader
+///      cap in main.zig so an oversized spritesheet can't crash the renderer.
 #[tauri::command]
-fn read_file_as_base64(path: String) -> Option<String> {
+fn read_file_as_base64(path: String) -> Result<String, String> {
     use std::io::Read;
-    // Security: restrict reads to the user's home directory.
-    // This command is exposed to WebView JS; without this guard any
-    // JS executing in the window (or injected) could read arbitrary files.
-    let home = dirs::home_dir()?;
-    let canonical = fs::canonicalize(&path).ok()?;
-    if !canonical.starts_with(&home) {
-        return None;
+    let canonical = fs::canonicalize(&path)
+        .map_err(|e| format!("cannot resolve path: {e}"))?;
+    let roots = pet_roots();
+    if !roots.iter().any(|r| canonical.starts_with(r)) {
+        return Err(format!("path is outside allowed pet directories: {}", canonical.display()));
     }
-    let mut f = fs::File::open(&canonical).ok()?;
+    let meta = fs::metadata(&canonical)
+        .map_err(|e| format!("cannot stat file: {e}"))?;
+    if meta.len() > MAX_PET_BYTES {
+        return Err(format!("file too large ({} bytes, cap {} bytes)", meta.len(), MAX_PET_BYTES));
+    }
+    let mut f = fs::File::open(&canonical)
+        .map_err(|e| format!("cannot open file: {e}"))?;
     let mut buf = Vec::new();
-    f.read_to_end(&mut buf).ok()?;
-    Some(base64_encode(&buf))
+    f.read_to_end(&mut buf)
+        .map_err(|e| format!("read failed: {e}"))?;
+    Ok(base64_encode(&buf))
 }
 
 fn base64_encode(input: &[u8]) -> String {
@@ -245,6 +276,9 @@ fn spawn_sidecar(state: State<Mutex<SidecarState>>) -> Result<u16, String> {
     let node = find_node();
     let child = std::process::Command::new(&node)
         .arg(&sidecar_path)
+        // Tell the sidecar our PID so its parent-watchdog can kill
+        // itself when this desktop process exits. Mirrors main.zig line 1086.
+        .env("PETDEX_PARENT_PID", std::process::id().to_string())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
