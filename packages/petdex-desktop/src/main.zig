@@ -16,6 +16,8 @@ const MENU_H: u32 = 420;
 const MAX_PET_BYTES: usize = 16 * 1024 * 1024;
 const MAX_ACTIVE_BYTES: usize = 4 * 1024;
 const MAX_SLUG_LEN: usize = 64;
+// Room for `slugs=a,b,c` query values (24 slugs × ~65 chars, matches web cap).
+const MAX_SLUGS_QUERY_BYTES: usize = 24 * (MAX_SLUG_LEN + 1);
 
 const DeepLink = union(enum) {
     none,
@@ -1402,12 +1404,14 @@ const PetdexState = struct {
         var deeplink = readDeepLinkFromPath(self.allocator, self.io, incoming_path) catch DeepLink{ .none = {} };
         std.Io.Dir.deleteFileAbsolute(self.io, incoming_path) catch {};
 
+        const pending_path = try std.fs.path.join(self.allocator, &.{ runtime_dir, "pending-deeplink.txt" });
+        defer self.allocator.free(pending_path);
         if (deeplink == .none) {
-            const pending_path = try std.fs.path.join(self.allocator, &.{ runtime_dir, "pending-deeplink.txt" });
-            defer self.allocator.free(pending_path);
             deeplink = readDeepLinkFromPath(self.allocator, self.io, pending_path) catch DeepLink{ .none = {} };
-            std.Io.Dir.deleteFileAbsolute(self.io, pending_path) catch {};
         }
+        // Drop any leftover pending link so a fresh incoming URL cannot leave
+        // a stale install/activate queued for the next poll.
+        std.Io.Dir.deleteFileAbsolute(self.io, pending_path) catch {};
 
         defer freeDeepLink(self.allocator, deeplink);
         return try formatDeepLinkJson(self.allocator, deeplink, output);
@@ -2240,7 +2244,9 @@ fn parseInstallSlugsFromQuery(allocator: std.mem.Allocator, query: []const u8) !
         if (pair.len == 0) continue;
         if (std.mem.startsWith(u8, pair, "slugs=")) {
             const value = pair["slugs=".len..];
-            var slug_iter = std.mem.splitScalar(u8, value, ',');
+            var decoded_buf: [MAX_SLUGS_QUERY_BYTES]u8 = undefined;
+            const csv = percentDecodeSlug(value, &decoded_buf) orelse value;
+            var slug_iter = std.mem.splitScalar(u8, csv, ',');
             while (slug_iter.next()) |part| {
                 const slug = std.mem.trim(u8, part, " \t");
                 try appendInstallSlug(allocator, &slugs, slug);
@@ -3334,6 +3340,17 @@ test "parseDeepLinkFromUrl: batch install via slugs csv" {
     defer freeDeepLink(a, dl);
     try std.testing.expect(dl == .install);
     try std.testing.expectEqual(@as(usize, 2), dl.install.items.len);
+}
+
+test "parseDeepLinkFromUrl: batch install via percent-encoded slugs csv" {
+    const a = std.testing.allocator;
+    const raw = try a.dupe(u8, "petdex://install?slugs=mochi%2Ckebo");
+    const dl = try parseDeepLinkFromUrl(a, raw);
+    defer freeDeepLink(a, dl);
+    try std.testing.expect(dl == .install);
+    try std.testing.expectEqual(@as(usize, 2), dl.install.items.len);
+    try std.testing.expectEqualStrings("mochi", dl.install.items[0]);
+    try std.testing.expectEqualStrings("kebo", dl.install.items[1]);
 }
 
 test "parseDeepLinkFromUrl: rejects path with slash" {
