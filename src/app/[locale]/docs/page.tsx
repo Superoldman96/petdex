@@ -4,7 +4,7 @@ import type React from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import { buildLocaleAlternates } from "@/lib/locale-routing";
+import { buildLocaleAlternates, withLocale } from "@/lib/locale-routing";
 
 import { CommandLine } from "@/components/command-line";
 import { GithubIcon } from "@/components/github-icon";
@@ -61,8 +61,9 @@ export default async function DocsPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const localeValue = hasLocale(locale) ? locale : "en";
   const t = await getTranslations({
-    locale: hasLocale(locale) ? locale : "en",
+    locale: localeValue,
     namespace: "docsPage",
   });
   const placeholder = {
@@ -158,7 +159,7 @@ export default async function DocsPage({
                 code: (chunks) => <code>{chunks}</code>,
                 link: (chunks) => (
                   <Link
-                    href="/create"
+                    href={withLocale("/create", localeValue)}
                     className="font-medium underline underline-offset-4"
                   >
                     {chunks}
@@ -272,7 +273,7 @@ export default async function DocsPage({
                 ...rich,
                 download: (chunks) => (
                   <Link
-                    href="/download"
+                    href={withLocale("/download", localeValue)}
                     className="font-medium underline underline-offset-4"
                   >
                     {chunks}
@@ -414,7 +415,7 @@ export default async function DocsPage({
                   ...rich,
                   create: (chunks) => (
                     <Link
-                      href="/create"
+                      href={withLocale("/create", localeValue)}
                       className="font-medium underline underline-offset-4"
                     >
                       {chunks}
@@ -433,7 +434,7 @@ export default async function DocsPage({
                 ...rich,
                 takedown: (chunks) => (
                   <Link
-                    href="/legal/takedown"
+                    href={withLocale("/legal/takedown", localeValue)}
                     className="font-medium underline underline-offset-4"
                   >
                     {chunks}
