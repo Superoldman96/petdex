@@ -1717,6 +1717,12 @@
         "hint": "将这只宠物添加到你的本地集合",
         "hint__fixme": true
       },
+      "installPets": {
+        "title": "安装 {count} 只宠物",
+        "hint": "将这些宠物添加到你的本地收藏",
+        "title__fixme": true,
+        "hint__fixme": true
+      },
       "stayUpdated": {
         "title": "保持更新",
         "title__fixme": true,
@@ -1890,6 +1896,7 @@
     "noSummary": "暂无摘要。",
     "confidence": "置信度：{confidence}%。",
     "evidenceAssets": "素材",
+    "evidenceSecurity": "安全",
     "evidencePolicy": "政策",
     "evidenceVisualText": "图中文字",
     "evidenceVisualSignals": "视觉信号"
@@ -1940,6 +1947,8 @@
   "collectionActionMenu": {
     "moreActions": "{title} 的更多操作",
     "closeMenu": "关闭菜单",
+    "openInPetdex": "在 Petdex Desktop 中打开",
+    "openInPetdexDesc": "安装整个合集",
     "openInCodex": "在 Codex 中打开",
     "openInCodexDesc": "由 Codex Desktop 执行安装",
     "copyInstallAll": "复制全部安装命令",

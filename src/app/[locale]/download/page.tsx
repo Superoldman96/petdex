@@ -19,7 +19,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 import { hasLocale } from "@/i18n/config";
-import { buildSetupSteps, parsePendingPet } from "./setup-steps";
+import { buildSetupSteps, parsePendingInstallSlugs } from "./setup-steps";
 
 const SITE_URL = "https://petdex.crafter.run";
 
@@ -80,7 +80,7 @@ export default async function DownloadPage({
   const t = await getTranslations("download");
   const locale = await getLocale();
   const params = await searchParams;
-  const pendingPet = parsePendingPet(params.next);
+  const pendingInstallSlugs = parsePendingInstallSlugs(params.next);
 
   const features = [
     {
@@ -131,7 +131,7 @@ export default async function DownloadPage({
 
       <SiteHeader />
 
-      {pendingPet ? (
+      {pendingInstallSlugs && pendingInstallSlugs.length > 0 ? (
         <div className="relative z-10 border-border-base/60 border-b bg-brand/10 backdrop-blur-sm">
           <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-1 px-5 py-3 md:flex-row md:items-center md:gap-3 md:px-8">
             <p className="text-sm text-foreground">
@@ -140,7 +140,9 @@ export default async function DownloadPage({
               </span>{" "}
               {t("pendingPet.messageBefore")}{" "}
               <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs">
-                {pendingPet}
+                {pendingInstallSlugs.length === 1
+                  ? pendingInstallSlugs[0]
+                  : pendingInstallSlugs.join(", ")}
               </code>{" "}
               {t("pendingPet.messageAfter")}
             </p>
@@ -234,7 +236,7 @@ export default async function DownloadPage({
           </h2>
 
           <ol className="mt-10 flex flex-col gap-8">
-            {buildSetupSteps(t, pendingPet).map((step, idx) => {
+            {buildSetupSteps(t, pendingInstallSlugs).map((step, idx) => {
               const number = idx + 1;
               const dotClass = step.dimmed
                 ? "mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-surface font-mono text-xs font-semibold text-muted-2 ring-1 ring-border-base"
