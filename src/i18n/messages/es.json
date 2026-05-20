@@ -1499,6 +1499,10 @@
         "title": "Instala {slug}",
         "hint": "Anade esta mascota a tu coleccion local"
       },
+      "installPets": {
+        "title": "Instala {count} mascotas",
+        "hint": "Anade estas mascotas a tu coleccion local"
+      },
       "stayUpdated": {
         "title": "Mantente actualizado",
         "hint": "Descarga la ultima version del escritorio y reinicia la mascota si estaba corriendo. Corre cuando quieras."
@@ -1702,6 +1706,8 @@
   "collectionActionMenu": {
     "moreActions": "Más acciones para {title}",
     "closeMenu": "Cerrar menú",
+    "openInPetdex": "Abrir en Petdex Desktop",
+    "openInPetdexDesc": "Instala toda la colección",
     "openInCodex": "Abrir en Codex",
     "openInCodexDesc": "Codex Desktop ejecuta la instalación",
     "copyInstallAll": "Copiar instalar todo",

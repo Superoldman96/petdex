@@ -7,7 +7,12 @@ export type ResolvedPet = {
 };
 
 function singleLine(value: string): string {
-  return String(value).replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
+  return Array.from(String(value), (char) => {
+    const code = char.charCodeAt(0);
+    return code <= 0x1f || code === 0x7f ? " " : char;
+  })
+    .join("")
+    .trim();
 }
 
 function quotePosix(value: string): string {

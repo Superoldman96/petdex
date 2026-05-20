@@ -1499,6 +1499,10 @@
         "title": "Install {slug}",
         "hint": "Adds this pet to your local collection"
       },
+      "installPets": {
+        "title": "Install {count} pets",
+        "hint": "Adds these pets to your local collection"
+      },
       "stayUpdated": {
         "title": "Stay updated",
         "hint": "Pulls the latest desktop release and restarts the pet if it was running. Run any time."
@@ -1702,6 +1706,8 @@
   "collectionActionMenu": {
     "moreActions": "More actions for {title}",
     "closeMenu": "Close menu",
+    "openInPetdex": "Open in Petdex Desktop",
+    "openInPetdexDesc": "Installs the whole collection",
     "openInCodex": "Open in Codex",
     "openInCodexDesc": "Codex Desktop runs the install",
     "copyInstallAll": "Copy install all",
