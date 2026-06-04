@@ -6,7 +6,6 @@ import { getTranslations } from "next-intl/server";
 
 import { db, schema } from "@/lib/db/client";
 import { buildLocaleAlternates } from "@/lib/locale-routing";
-import { toCurrentR2PublicUrl } from "@/lib/r2-public-url";
 
 import { type RequestRow, RequestsView } from "@/components/requests-view";
 import { SiteFooter } from "@/components/site-footer";
@@ -141,12 +140,7 @@ export default async function RequestsPage() {
         .from(schema.submittedPets)
         .where(inArray(schema.submittedPets.slug, fulfilledSlugs))
     : [];
-  const petBySlug = new Map(
-    fulfilledPets.map((p) => [
-      p.slug,
-      { ...p, spritesheetUrl: toCurrentR2PublicUrl(p.spritesheetUrl) },
-    ]),
-  );
+  const petBySlug = new Map(fulfilledPets.map((p) => [p.slug, p]));
 
   const initial: RequestRow[] = rows.map((r) => {
     const requester = r.requestedBy
