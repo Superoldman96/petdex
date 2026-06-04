@@ -11,15 +11,7 @@ import {
   useState,
 } from "react";
 
-import {
-  Check,
-  CheckCircle2,
-  Loader2,
-  Plus,
-  Search,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { Check, Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicFeedAd } from "@/lib/ads/queries";
@@ -147,11 +139,6 @@ export function PetGallery({
   const [activeBatches, setActiveBatches] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<SortKey>("alpha");
   const [sortTouched, setSortTouched] = useState(false);
-  // The home page no longer ships caughtSlugs server-side — that would
-  // make every SSR render per-visitor and kill ISR. We pull the caught
-  // slug set from the shared HeaderStateProvider (one polled aggregate
-  // instead of per-component fetch) so the "caught" highlight still
-  // works for signed-in users without an extra Edge Request per page.
   const headerCaught = useHeaderState().state.caught;
   const caughtSet = new Set(caughtSlugs ?? headerCaught);
 
@@ -790,11 +777,17 @@ export type PetCardPinState = {
   pinnedCount: number;
   /** Hard cap for the owner. Same constant the editor uses. */
   maxPins: number;
+  /** Mirrors the button's optimistic state into parent-owned layouts. */
+  onPinChange?: (isPinned: boolean) => void;
+  /** Temporarily prevents pin writes while another full-list pin save is in flight. */
+  disabled?: boolean;
+  disabledTitle?: string;
 };
 
 type PetCardProps = {
   pet: PetWithMetrics;
   index: number;
+  /** User has already favorited/caught this pet; shown by the heart button. */
   caught?: boolean;
   /**
    * Optional. Kept on the type so older call sites that still pass
@@ -918,11 +911,6 @@ function PetCardImpl({
             <span className="font-mono text-[11px] tracking-[0.22em] text-muted-3 uppercase">
               No. {dexLabel}
             </span>
-            {caught ? (
-              <span title={t("caughtTitle")} className="text-emerald-600">
-                <CheckCircle2 className="size-4 fill-current" />
-              </span>
-            ) : null}
           </div>
         </div>
 
@@ -1062,6 +1050,7 @@ function PetCardImpl({
           soundUrl={pet.soundUrl}
           installCount={installCount}
           likeCount={likeCount}
+          initialLiked={caught}
         />
       </div>
 
@@ -1089,6 +1078,9 @@ function PetCardImpl({
               pinnedCount={pinState.pinnedCount}
               maxPins={pinState.maxPins}
               appearance="subtle"
+              onOptimisticChange={pinState.onPinChange}
+              disabled={pinState.disabled}
+              disabledTitle={pinState.disabledTitle}
             />
           ) : null}
           <PetActionMenu
@@ -1114,6 +1106,9 @@ function PetCardImpl({
                 isPinned={pinState.isPinned}
                 pinnedCount={pinState.pinnedCount}
                 maxPins={pinState.maxPins}
+                onOptimisticChange={pinState.onPinChange}
+                disabled={pinState.disabled}
+                disabledTitle={pinState.disabledTitle}
               />
             </div>
           ) : null}

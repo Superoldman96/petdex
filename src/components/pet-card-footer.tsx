@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import { useClerk } from "@clerk/nextjs";
-import { Download, Heart, Loader2, Share2, TerminalSquare } from "lucide-react";
+import { Download, Heart, Share2, TerminalSquare } from "lucide-react";
 import { useLocale } from "next-intl";
 
 import { formatLocalizedNumber } from "@/lib/format-number";
@@ -45,46 +45,65 @@ function PetCardFooterImpl({
 
   const [liked, setLiked] = useState(initialLiked ?? false);
   const [count, setCount] = useState(likeCount);
-  const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const likeRequestSeq = useRef(0);
   const formattedLikeCount = formatLocalizedNumber(count, locale);
   const formattedInstallCount = formatLocalizedNumber(installCount, locale);
+
+  useEffect(() => {
+    if (typeof initialLiked === "boolean") setLiked(initialLiked);
+  }, [initialLiked]);
 
   const toggleLike = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (busy) return;
       if (!clerk.loaded) return;
       const session = clerk.session;
       if (!session) {
         router.push("/?signin=1");
         return;
       }
+      const seq = likeRequestSeq.current + 1;
+      likeRequestSeq.current = seq;
+      const previousLiked = liked;
+      const previousCount = count;
       const next = !liked;
       setLiked(next);
       setCount((c) => Math.max(0, c + (next ? 1 : -1)));
-      setBusy(true);
       track("pet_like_toggled", { slug, liked: next, source: "card-footer" });
       try {
-        const res = await fetch(`/api/pets/${slug}/like`, { method: "POST" });
+        const res = await fetch(`/api/pets/${slug}/like`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ liked: next }),
+        });
         if (!res.ok) {
-          setLiked(!next);
-          setCount((c) => Math.max(0, c + (next ? -1 : 1)));
+          if (likeRequestSeq.current === seq) {
+            setLiked(previousLiked);
+            setCount(previousCount);
+          }
           return;
         }
         const j = (await res.json().catch(() => null)) as {
+          count?: number;
           likeCount?: number;
           liked?: boolean;
         } | null;
-        if (j && typeof j.likeCount === "number") setCount(j.likeCount);
-        if (j && typeof j.liked === "boolean") setLiked(j.liked);
+        if (likeRequestSeq.current !== seq) return;
+        const serverCount =
+          typeof j?.count === "number" ? j.count : j?.likeCount;
+        if (typeof serverCount === "number") setCount(serverCount);
+        if (typeof j?.liked === "boolean") setLiked(j.liked);
         void refresh({ force: true });
-      } finally {
-        setBusy(false);
+      } catch {
+        if (likeRequestSeq.current === seq) {
+          setLiked(previousLiked);
+          setCount(previousCount);
+        }
       }
     },
-    [busy, clerk, liked, refresh, router, slug],
+    [clerk, count, liked, refresh, router, slug],
   );
 
   const copyInstall = useCallback(
@@ -217,8 +236,6 @@ function PetCardFooterImpl({
           <Share2 className="size-3.5" />
         </Button>
       </div>
-
-      {busy ? <Loader2 className="size-3.5 animate-spin text-muted-4" /> : null}
     </div>
   );
 }
