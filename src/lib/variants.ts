@@ -6,6 +6,7 @@ import { AGGREGATE_KEYS, cachedAggregate } from "@/lib/db/cached-aggregates";
 import { db, schema } from "@/lib/db/client";
 import { getDexNumberMap } from "@/lib/dex";
 import { withNextDataCache } from "@/lib/next-data-cache";
+import { toCurrentR2PublicUrl } from "@/lib/r2-public-url";
 
 export const VARIANT_DISTANCE_THRESHOLD = 14;
 export const VARIANT_MAX_RESULTS = 6;
@@ -51,7 +52,7 @@ const getVariantIndex = cache(async (): Promise<VariantIndexRow[]> => {
           return rows.map((row) => ({
             slug: row.slug,
             displayName: row.displayName,
-            spritesheetUrl: row.spritesheetUrl,
+            spritesheetUrl: toCurrentR2PublicUrl(row.spritesheetUrl),
             dhash: row.dhash,
             source: row.source,
           }));

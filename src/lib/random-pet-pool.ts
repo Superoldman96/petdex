@@ -4,6 +4,7 @@ import { and, eq, ne } from "drizzle-orm";
 
 import { AGGREGATE_KEYS, cachedAggregate } from "@/lib/db/cached-aggregates";
 import { db, schema } from "@/lib/db/client";
+import { toCurrentR2PublicUrl } from "@/lib/r2-public-url";
 import {
   pickRandomPet,
   type RandomPetCandidate,
@@ -19,8 +20,8 @@ export async function getRandomPetPool(): Promise<RandomPet[]> {
       key: AGGREGATE_KEYS.randomPetPool,
       ttlSeconds: RANDOM_POOL_TTL_SECONDS,
     },
-    async () =>
-      db
+    async () => {
+      const rows = await db
         .select({
           slug: schema.submittedPets.slug,
           displayName: schema.submittedPets.displayName,
@@ -33,7 +34,12 @@ export async function getRandomPetPool(): Promise<RandomPet[]> {
             eq(schema.submittedPets.status, "approved"),
             ne(schema.submittedPets.source, "discover"),
           ),
-        ),
+        );
+      return rows.map((row) => ({
+        ...row,
+        spritesheetPath: toCurrentR2PublicUrl(row.spritesheetPath),
+      }));
+    },
   );
 }
 

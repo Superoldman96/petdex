@@ -19,6 +19,7 @@ import {
   type Metrics,
 } from "@/lib/db/metrics";
 import { withNextDataCache } from "@/lib/next-data-cache";
+import { toCurrentR2PublicUrl } from "@/lib/r2-public-url";
 import type { PetdexPet, PetKind, PetVibe } from "@/lib/types";
 
 export type PetWithMetrics = PetdexPet & { metrics: Metrics };
@@ -261,9 +262,9 @@ export async function getApprovedPetsForManifest(): Promise<ApprovedPetSlim[]> {
         slug: row.slug,
         displayName: row.displayName,
         kind: row.kind as PetKind,
-        spritesheetUrl: row.spritesheetUrl,
-        petJsonUrl: row.petJsonUrl,
-        zipUrl: row.zipUrl,
+        spritesheetUrl: toCurrentR2PublicUrl(row.spritesheetUrl),
+        petJsonUrl: toCurrentR2PublicUrl(row.petJsonUrl),
+        zipUrl: toCurrentR2PublicUrl(row.zipUrl),
         creditName: row.creditName,
       }));
     },
@@ -341,10 +342,10 @@ export function rowToPet(row: PetRow): PetdexPet {
     slug: row.slug,
     displayName: row.displayName,
     description: row.description,
-    spritesheetPath: row.spritesheetUrl,
-    petJsonPath: row.petJsonUrl,
-    zipUrl: row.zipUrl,
-    soundUrl: row.soundUrl,
+    spritesheetPath: toCurrentR2PublicUrl(row.spritesheetUrl),
+    petJsonPath: toCurrentR2PublicUrl(row.petJsonUrl),
+    zipUrl: toCurrentR2PublicUrl(row.zipUrl),
+    soundUrl: toCurrentR2PublicUrl(row.soundUrl),
     approvalState: "approved",
     featured: row.featured,
     kind: row.kind as PetKind,

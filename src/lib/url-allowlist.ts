@@ -12,11 +12,10 @@
 // Block everything else, including http://, file://, data:, javascript:,
 // and lan IPs.
 
+import { R2_PUBLIC_HOSTS } from "@/lib/r2-public-url";
+
 const ALLOWED_HOSTS = (() => {
-  const hosts = new Set<string>([
-    "pub-94495283df974cfea5e98d6a9e3fa462.r2.dev",
-    "yu2vz9gndp.ufs.sh",
-  ]);
+  const hosts = new Set<string>([...R2_PUBLIC_HOSTS, "yu2vz9gndp.ufs.sh"]);
   const base = process.env.R2_PUBLIC_BASE;
   if (base) {
     try {

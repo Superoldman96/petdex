@@ -698,6 +698,7 @@ const PETDEX_URL = process.env.PETDEX_URL ?? "https://petdex.crafter.run";
 // attacker-controlled bytes to ~/.petdex/pets and ~/.codex/pets.
 // Keep this list in sync with the server-side allowlist.
 const TRUSTED_ASSET_HOSTS = new Set<string>([
+  "petdex-assets.raillyhugo.workers.dev",
   // R2 public bucket (current asset origin).
   "pub-94495283df974cfea5e98d6a9e3fa462.r2.dev",
   // Legacy UploadThing host. Rows from before the R2 migration still
@@ -811,6 +812,7 @@ async function installStarterPet(
 ): Promise<string | null> {
   const fetchImpl = options.fetchOverride ?? fetch;
   const baseUrl = options.petdexUrl ?? PETDEX_URL;
+  const referer = `${baseUrl.replace(/\/+$/, "")}/`;
   type Pet = {
     slug: string;
     displayName: string;
@@ -853,7 +855,11 @@ async function installStarterPet(
   // If every candidate is taken or untrusted we give up — the
   // caller will surface a recoverable hint to the user.
   for (const candidate of ordered) {
-    const installed = await tryInstallStarterCandidate(candidate, fetchImpl);
+    const installed = await tryInstallStarterCandidate(
+      candidate,
+      fetchImpl,
+      referer,
+    );
     if (installed) return installed;
   }
   return null;
@@ -867,6 +873,7 @@ async function tryInstallStarterCandidate(
     petJsonUrl: string;
   },
   fetchImpl: typeof fetch,
+  referer: string,
 ): Promise<string | null> {
   // Belt-and-braces: the server-side /api/manifest already filters
   // submissions through the same allowlist, but a CLI installing
@@ -898,7 +905,10 @@ async function tryInstallStarterCandidate(
   }
 
   const fetchOrThrow = async (url: string): Promise<ArrayBuffer> => {
-    const res = await fetchImpl(url, { signal: AbortSignal.timeout(15_000) });
+    const res = await fetchImpl(url, {
+      headers: { Referer: referer },
+      signal: AbortSignal.timeout(15_000),
+    });
     if (!res.ok) throw new Error(`download ${url} → ${res.status}`);
     return res.arrayBuffer();
   };

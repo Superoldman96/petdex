@@ -20,6 +20,7 @@ import { userIdForHandle } from "@/lib/handles";
 import { getOwnerRank } from "@/lib/leaderboard";
 import { buildLocaleAlternates } from "@/lib/locale-routing";
 import { type PetWithMetrics, rowToPet } from "@/lib/pets";
+import { toCurrentR2PublicUrl } from "@/lib/r2-public-url";
 
 import { JsonLd } from "@/components/json-ld";
 import type { Submission } from "@/components/my-pets-view";
@@ -191,8 +192,8 @@ export default async function UserProfilePage({ params }: PageProps) {
           slug: row.slug,
           displayName: row.displayName,
           description: row.description,
-          spritesheetUrl: row.spritesheetUrl,
-          zipUrl: row.zipUrl,
+          spritesheetUrl: toCurrentR2PublicUrl(row.spritesheetUrl),
+          zipUrl: toCurrentR2PublicUrl(row.zipUrl),
           kind: row.kind,
           vibes: (row.vibes as string[]) ?? [],
           tags: (row.tags as string[]) ?? [],

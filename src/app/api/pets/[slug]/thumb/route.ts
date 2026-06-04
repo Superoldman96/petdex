@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 
 import { getPet } from "@/lib/pets";
+import { fetchR2Asset } from "@/lib/r2-fetch";
 import { isAllowedAssetUrl } from "@/lib/url-allowlist";
 
 export const runtime = "nodejs";
@@ -50,7 +51,7 @@ export async function GET(
 
   let buf: Buffer;
   try {
-    const res = await fetch(pet.spritesheetPath, { redirect: "error" });
+    const res = await fetchR2Asset(pet.spritesheetPath, { redirect: "error" });
     if (!res.ok) {
       return new NextResponse("upstream", { status: 502 });
     }

@@ -45,6 +45,7 @@ import {
 
 // ─── config ────────────────────────────────────────────────────────────────
 const PETDEX_URL = process.env.PETDEX_URL ?? "https://petdex.crafter.run";
+const PETDEX_REFERER = `${PETDEX_URL.replace(/\/+$/, "")}/`;
 const FALLBACK_ISSUER = "https://clerk.petdex.crafter.run";
 const FALLBACK_CLIENT_ID = "LcThwEayl6KAA1Qm";
 const DEFAULT_SCOPES = ["profile", "email", "openid", "offline_access"];
@@ -366,7 +367,7 @@ async function installOne(pet: ManifestPet): Promise<void> {
   // Validate response status before reading the body so a 404/500
   // doesn't silently land HTML inside pet.json or spritesheet.*.
   const fetchOrThrow = async (url: string): Promise<ArrayBuffer> => {
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { Referer: PETDEX_REFERER } });
     if (!res.ok) {
       throw new Error(`download ${url} -> ${res.status} ${res.statusText}`);
     }
@@ -519,7 +520,7 @@ async function cmdInstall(args: string[]) {
 }
 
 async function _download(url: string, dest: string): Promise<void> {
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { Referer: PETDEX_REFERER } });
   if (!res.ok) {
     throw new Error(`download ${url} → ${res.status}`);
   }
