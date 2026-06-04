@@ -2,6 +2,8 @@ import { describe, expect, it } from "bun:test";
 
 import {
   headerStateCacheKey,
+  headerStateFetchCacheMode,
+  headerStateResponseSavedAt,
   INITIAL_HEADER_STATE,
   nextHeaderStatePollDelay,
   parseCachedHeaderState,
@@ -93,6 +95,30 @@ describe("header state helpers", () => {
     expect(headerStateCacheKey("user_123")).toBe(
       "petdex:header-state:user_123",
     );
+  });
+
+  it("uses network reload only for forced header refreshes", () => {
+    expect(headerStateFetchCacheMode()).toBe("default");
+    expect(headerStateFetchCacheMode(false)).toBe("default");
+    expect(headerStateFetchCacheMode(true)).toBe("reload");
+  });
+
+  it("preserves browser-cached response age for session storage freshness", () => {
+    const now = Date.parse("2026-06-04T12:45:00.000Z");
+    const date = new Headers({
+      date: "Thu, 04 Jun 2026 12:40:00 GMT",
+    });
+    const age = new Headers({ age: "120" });
+    const futureDate = new Headers({
+      date: "Thu, 04 Jun 2026 12:46:00 GMT",
+    });
+
+    expect(headerStateResponseSavedAt(date, now)).toBe(
+      Date.parse("2026-06-04T12:40:00.000Z"),
+    );
+    expect(headerStateResponseSavedAt(age, now)).toBe(now - 120_000);
+    expect(headerStateResponseSavedAt(futureDate, now)).toBe(now);
+    expect(headerStateResponseSavedAt(new Headers(), now)).toBe(now);
   });
 
   it("updates unread count without mutating the current header state", () => {

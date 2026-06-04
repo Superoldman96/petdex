@@ -15,6 +15,8 @@ import {
   HEADER_STATE_POLL_MS,
   type HeaderState,
   headerStateCacheKey,
+  headerStateFetchCacheMode,
+  headerStateResponseSavedAt,
   INITIAL_HEADER_STATE,
   nextHeaderStatePollDelay,
   parseCachedHeaderState,
@@ -76,7 +78,9 @@ export function HeaderStateProvider({
       const generation = ++requestGeneration.current;
       inFlightUser.current = requestUserId;
       try {
-        const res = await fetch("/api/me/header-state", { cache: "no-store" });
+        const res = await fetch("/api/me/header-state", {
+          cache: headerStateFetchCacheMode(options?.force),
+        });
         if (!res.ok) return;
         const json = (await res.json()) as HeaderState;
         if (
@@ -86,10 +90,11 @@ export function HeaderStateProvider({
         ) {
           return;
         }
+        const savedAt = headerStateResponseSavedAt(res.headers, now);
         setState(json);
-        lastRefreshAt.current = now;
+        lastRefreshAt.current = savedAt;
         if (cacheKey) {
-          writeCachedHeaderState(cacheKey, json, now);
+          writeCachedHeaderState(cacheKey, json, savedAt);
         }
       } catch {
         return;
@@ -136,28 +141,35 @@ export function HeaderStateProvider({
       setState(INITIAL_HEADER_STATE);
       lastRefreshAt.current = 0;
     }
-    void refresh({ force: !hasCachedState });
     const refreshIfVisible = (options?: { force?: boolean }) => {
       if (document.visibilityState !== "visible") return;
       void refresh(options);
     };
+    let cancelled = false;
     let intervalId: number | null = null;
+    let timeoutId: number | null = null;
     const poll = () => refreshIfVisible({ force: true });
-    const timeoutId = window.setTimeout(
-      () => {
-        poll();
-        intervalId = window.setInterval(poll, HEADER_STATE_POLL_MS);
-      },
-      nextHeaderStatePollDelay(lastRefreshAt.current, Date.now()),
-    );
+    const schedulePoll = () => {
+      if (cancelled) return;
+      timeoutId = window.setTimeout(
+        () => {
+          if (cancelled) return;
+          poll();
+          intervalId = window.setInterval(poll, HEADER_STATE_POLL_MS);
+        },
+        nextHeaderStatePollDelay(lastRefreshAt.current, Date.now()),
+      );
+    };
+    void refresh().finally(schedulePoll);
     const onFocus = () => refreshIfVisible();
     const onVisibilityChange = () => refreshIfVisible();
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
+      cancelled = true;
       mounted.current = false;
       requestGeneration.current += 1;
-      window.clearTimeout(timeoutId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
       if (intervalId !== null) window.clearInterval(intervalId);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
