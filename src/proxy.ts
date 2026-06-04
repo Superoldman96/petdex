@@ -8,6 +8,19 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import createMiddleware from "next-intl/middleware";
 
 import {
+  publicTrafficGuardKey,
+  publicTrafficGuardRule,
+  shouldBlockDirectAssetExport,
+  shouldBlockKnownAbusiveClient,
+} from "@/lib/public-traffic-guard";
+import {
+  packAssetRatelimit,
+  publicCatalogRatelimit,
+  publicPageRatelimit,
+  publicStateRatelimit,
+  stickerAssetRatelimit,
+} from "@/lib/ratelimit";
+import {
   buildRouteCostSample,
   routeCostSampleRate,
   routeCostSecret,
@@ -49,8 +62,10 @@ const handleI18nRouting = createMiddleware({
 // clerkMiddleware entirely (it would otherwise try to validate a real
 // backend secret before our shims have a chance to short-circuit).
 // Everything else — next-intl routing, the shuffle cookie — keeps working.
-const baseMiddleware = (req: NextRequest, event?: NextFetchEvent) => {
+const baseMiddleware = async (req: NextRequest, event?: NextFetchEvent) => {
   scheduleRouteCostSample(req, event);
+  const guard = await guardPublicTraffic(req);
+  if (guard) return guard;
   if (new URL(req.url).pathname.startsWith("/api")) {
     return NextResponse.next();
   }
@@ -61,6 +76,8 @@ export default IS_MOCK_AUTH
   ? baseMiddleware
   : clerkMiddleware(async (auth, req, event) => {
       scheduleRouteCostSample(req, event);
+      const guard = await guardPublicTraffic(req);
+      if (guard) return guard;
 
       if (isProtected(req)) {
         await auth.protect();
@@ -80,6 +97,62 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 };
+
+async function guardPublicTraffic(
+  req: NextRequest,
+): Promise<NextResponse | null> {
+  if (shouldBlockKnownAbusiveClient(req.headers)) {
+    return new NextResponse(null, {
+      status: 403,
+      headers: { "cache-control": "no-store" },
+    });
+  }
+
+  if (
+    shouldBlockDirectAssetExport({
+      headers: req.headers,
+      method: req.method,
+      origin: req.nextUrl.origin,
+      pathname: req.nextUrl.pathname,
+    })
+  ) {
+    return new NextResponse(null, {
+      status: 403,
+      headers: { "cache-control": "no-store" },
+    });
+  }
+
+  const rule = publicTrafficGuardRule({
+    method: req.method,
+    pathname: req.nextUrl.pathname,
+  });
+  if (!rule) return null;
+
+  const key = publicTrafficGuardKey(req.headers);
+  const limit =
+    rule === "sticker"
+      ? await stickerAssetRatelimit.limit(key)
+      : rule === "pack"
+        ? await packAssetRatelimit.limit(key)
+        : rule === "state"
+          ? await publicStateRatelimit.limit(key)
+          : rule === "page"
+            ? await publicPageRatelimit.limit(key)
+            : await publicCatalogRatelimit.limit(key);
+  if (limit.success) return null;
+
+  const retryAfter = Math.max(1, Math.ceil((limit.reset - Date.now()) / 1000));
+  return NextResponse.json(
+    { error: "rate_limited" },
+    {
+      status: 429,
+      headers: {
+        "cache-control": "no-store",
+        "retry-after": String(retryAfter),
+      },
+    },
+  );
+}
 
 function scheduleRouteCostSample(req: NextRequest, event?: NextFetchEvent) {
   if (!event) return;
