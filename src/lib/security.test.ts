@@ -20,6 +20,12 @@ import {
   posixNotFoundScript,
   powershellInstallScript,
 } from "@/lib/install-script-render";
+import {
+  DEFAULT_R2_PUBLIC_BASE,
+  LEGACY_R2_PUBLIC_BASE,
+  normalizeBase,
+  WORKERS_DEV_R2_PUBLIC_BASE,
+} from "@/lib/r2-public-url";
 import { validateSubmission } from "@/lib/submissions-validation";
 import {
   isAllowedAssetUrl,
@@ -28,12 +34,9 @@ import {
 } from "@/lib/url-allowlist";
 
 const BASE_INPUT = {
-  zipUrl:
-    "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/community/x/x.zip",
-  spritesheetUrl:
-    "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/community/x/spritesheet.webp",
-  petJsonUrl:
-    "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/community/x/pet.json",
+  zipUrl: "https://assets.petdex.dev/community/x/x.zip",
+  spritesheetUrl: "https://assets.petdex.dev/community/x/spritesheet.webp",
+  petJsonUrl: "https://assets.petdex.dev/community/x/pet.json",
   displayName: "Test Pet",
   description: "A test pet.",
   petId: "test-pet",
@@ -42,20 +45,28 @@ const BASE_INPUT = {
 };
 
 describe("isAllowedAssetUrl", () => {
-  it("allows R2 https", () => {
+  it("allows canonical asset host https", () => {
+    expect(isAllowedAssetUrl("https://assets.petdex.dev/x/y.webp")).toBe(true);
+  });
+
+  it("blocks retired legacy r2.dev host", () => {
     expect(
       isAllowedAssetUrl(
         "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/x/y.webp",
       ),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it("blocks retired workers.dev host", () => {
+    expect(
+      isAllowedAssetUrl(
+        "https://petdex-assets.raillyhugo.workers.dev/x/y.webp",
+      ),
+    ).toBe(false);
   });
 
   it("blocks http", () => {
-    expect(
-      isAllowedAssetUrl(
-        "http://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/x/y.webp",
-      ),
-    ).toBe(false);
+    expect(isAllowedAssetUrl("http://assets.petdex.dev/x/y.webp")).toBe(false);
   });
 
   it("blocks javascript:", () => {
@@ -85,6 +96,35 @@ describe("isAllowedAssetUrl", () => {
     expect(isAllowedAssetUrl("")).toBe(false);
     expect(isAllowedAssetUrl(null)).toBe(false);
     expect(isAllowedAssetUrl(undefined)).toBe(false);
+  });
+});
+
+// R2_PUBLIC_BASE feeds the trusted host set. If a deployment sets it to a
+// retired host, normalizeBase must rewrite it to the canonical host so the
+// dead host never re-enters the allowlist via the env override.
+describe("normalizeBase (env override safety)", () => {
+  it("rewrites the legacy r2.dev base to canonical", () => {
+    expect(normalizeBase(LEGACY_R2_PUBLIC_BASE)).toBe(DEFAULT_R2_PUBLIC_BASE);
+  });
+
+  it("rewrites the workers.dev base to canonical", () => {
+    expect(normalizeBase(WORKERS_DEV_R2_PUBLIC_BASE)).toBe(
+      DEFAULT_R2_PUBLIC_BASE,
+    );
+  });
+
+  it("falls back to canonical for non-https / malformed bases", () => {
+    expect(normalizeBase("http://assets.petdex.dev")).toBe(
+      DEFAULT_R2_PUBLIC_BASE,
+    );
+    expect(normalizeBase("not a url")).toBe(DEFAULT_R2_PUBLIC_BASE);
+    expect(normalizeBase(undefined)).toBe(DEFAULT_R2_PUBLIC_BASE);
+  });
+
+  it("preserves a valid custom https base", () => {
+    expect(normalizeBase("https://cdn.example.com")).toBe(
+      "https://cdn.example.com",
+    );
   });
 });
 
