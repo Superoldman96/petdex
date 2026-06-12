@@ -29,8 +29,8 @@ type DailyBucket = {
 
 const args = parseArgs(process.argv.slice(2));
 const project = args.project ?? "petdex";
-const days = numberArg(args.days ?? "1");
-const to = args.to ?? new Date().toISOString();
+const days = numberArg(args.days ?? "7");
+const to = args.to ?? lastClosedBucketBoundary().toISOString();
 const from =
   args.from ??
   new Date(new Date(to).getTime() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -68,6 +68,22 @@ console.log(
     2,
   )} days, projected $${summary.project.monthlyRunRate.toFixed(2)}/month`,
 );
+for (const item of summary.dailyProjectTotals) {
+  console.log(
+    `  ${item.day}  ${project} $${item.billed.toFixed(2).padStart(7)}  team $${item.teamBilled.toFixed(2).padStart(7)}`,
+  );
+}
+const lastDay = summary.dailyProjectTotals.at(-1);
+const priorDays = summary.dailyProjectTotals.slice(0, -1);
+if (
+  lastDay &&
+  lastDay.teamBilled === 0 &&
+  priorDays.some((item) => item.teamBilled > 0)
+) {
+  console.log(
+    `Warning: ${lastDay.day} has no billed data yet (charges materialize with ~24h lag after the 07:00Z bucket close); ignore that row.`,
+  );
+}
 
 function parseArgs(argv: string[]): Record<string, string | undefined> {
   const parsed: Record<string, string | undefined> = {};
@@ -79,6 +95,15 @@ function parseArgs(argv: string[]): Record<string, string | undefined> {
     if (value && !value.startsWith("--")) i += 1;
   }
   return parsed;
+}
+
+function lastClosedBucketBoundary(now = new Date()): Date {
+  const boundary = new Date(now);
+  boundary.setUTCHours(7, 0, 0, 0);
+  if (boundary.getTime() > now.getTime()) {
+    boundary.setUTCDate(boundary.getUTCDate() - 1);
+  }
+  return boundary;
 }
 
 function numberArg(value: string | undefined): number {
@@ -167,6 +192,10 @@ function summarize(input: {
   const serviceTotals = new Map<string, Bucket>();
   const projectServiceTotals = new Map<string, Bucket>();
   const dailyServiceTotals = new Map<string, DailyBucket>();
+  const dailyProjectTotals = new Map<
+    string,
+    { day: string; billed: number; teamBilled: number }
+  >();
   const tagKeys = new Set<string>();
   const windowDays =
     (new Date(input.to).getTime() - new Date(input.from).getTime()) /
@@ -183,6 +212,17 @@ function summarize(input: {
     for (const key of Object.keys(charge.Tags ?? {})) tagKeys.add(key);
     addBucket(projectTotals, projectName, billed, consumed, unit);
     addBucket(serviceTotals, service, billed, consumed, unit);
+
+    const chargeDay =
+      String(charge.ChargePeriodStart ?? "").slice(0, 10) || "unknown";
+    const dayTotal = dailyProjectTotals.get(chargeDay) ?? {
+      day: chargeDay,
+      billed: 0,
+      teamBilled: 0,
+    };
+    dayTotal.teamBilled += billed;
+    if (projectName === input.project) dayTotal.billed += billed;
+    dailyProjectTotals.set(chargeDay, dayTotal);
 
     if (projectName === input.project) {
       addBucket(projectServiceTotals, service, billed, consumed, unit);
@@ -227,6 +267,13 @@ function summarize(input: {
     topProjects: sortedBuckets(projectTotals).slice(0, 10),
     topServices: sortedBuckets(projectServiceTotals).slice(0, 15),
     allServices: sortedBuckets(serviceTotals).slice(0, 15),
+    dailyProjectTotals: [...dailyProjectTotals.values()]
+      .map((item) => ({
+        ...item,
+        billed: round(item.billed),
+        teamBilled: round(item.teamBilled),
+      }))
+      .sort((a, b) => a.day.localeCompare(b.day)),
     dailyServiceHotspots: [...dailyServiceTotals.values()]
       .map(roundDaily)
       .sort((a, b) => b.billed - a.billed)
@@ -299,6 +346,15 @@ function renderMarkdown(summary: ReturnType<typeof summarize>): string {
     `- ${summary.project.name} billed: $${summary.project.billed.toFixed(3)}`,
     `- ${summary.project.name} share: ${(summary.project.share * 100).toFixed(1)}%`,
     `- ${summary.project.name} monthly run-rate: $${summary.project.monthlyRunRate.toFixed(2)}`,
+    "",
+    "## Daily Project Billed",
+    "",
+    `| Day | ${summary.project.name} | Team |`,
+    "| --- | ---: | ---: |",
+    ...summary.dailyProjectTotals.map(
+      (item) =>
+        `| ${item.day} | $${item.billed.toFixed(3)} | $${item.teamBilled.toFixed(3)} |`,
+    ),
     "",
     "## Top Project Services",
     "",
