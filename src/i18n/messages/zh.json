@@ -38,8 +38,6 @@
     "topCreators": "创作者",
     "creators": "创作者",
     "requests": "心愿单",
-    "advertise": "投放广告",
-    "adDashboard": "广告仪表盘",
     "community": "社区",
     "discord": "Discord",
     "about": "关于",
@@ -63,9 +61,6 @@
     "createDesc": "用 Codex skill 孵化宠物，从想法到精灵图Sprite 只要几分钟",
     "submitDesc": "上传文件夹，Petdex 为所有人托管",
     "docsDesc": "安装 Petdex CLI，用 npm 分发宠物",
-    "earn": "推广",
-    "earnDesc": "管理广告活动、展示和点击数据",
-    "advertiseDesc": "通过赞助卡片触达安装 AI 工具的开发者",
     "builtWith": "Petdex 案例",
     "builtWithDesc": "社区基于 Petdex 格式发布的应用",
     "communityDesc": "中文入口、Discord 频道和创作交流",
@@ -74,7 +69,6 @@
     "openMore": "更多链接",
     "discover": "发现",
     "make": "创作",
-    "promote": "推广",
     "download": "下载",
     "downloadDesc": "macOS 桌面应用 - 让宠物陪在每个 AI Agent 旁边",
     "signIn": "登录",
@@ -99,7 +93,6 @@
     "rightsNotice": "宠物是用户提交的同人作品。Petdex 不主张拥有任何底层知识产权。",
     "topCreators": "创作者",
     "takedown": "下架请求",
-    "advertise": "投放广告 Advertise",
     "brand": "品牌 Brand",
     "github": "GitHub",
     "discord": "Discord",
@@ -211,229 +204,6 @@
     "cta": "推荐到合集",
     "closeAria": "关闭",
     "notePlaceholder": "可选：告诉管理员为什么这只宠物适合该合集"
-  },
-  "advertise": {
-    "metadata": {
-      "title": "在 Petdex 投放广告",
-      "description": "通过 Petdex 赞助卡片触达正在发现并安装 AI 与开发者工具的开发者。"
-    },
-    "eyebrow": "Petdex 广告",
-    "hero": {
-      "title": "把你的开发者工具展示给愿意尝试新工具的 builders。",
-      "body": "Petdex 正在吸引越来越多浏览 Codex 伙伴和开发者文化的开发者。他们已经习惯尝试 CLI 工具、AI 工作流和订阅产品，因此这里适合介绍 AI 与开发者工具。"
-    },
-    "heroCards": {
-      "starting": "$50 起",
-      "impressions": "可见曝光",
-      "native": "原生赞助卡片",
-      "audience": "开发者受众"
-    },
-    "landing": {
-      "primaryCta": "创建广告系列",
-      "secondaryCta": "打开仪表盘",
-      "pricingEyebrow": "简单的预付套餐",
-      "pricingTitle": "无需销售沟通即可购买可见曝光。",
-      "finalTitle": "素材准备好后即可开始。",
-      "finalBody": "创建广告系列，上传清晰的赞助卡片图片，选择预付套餐，然后继续到 Stripe checkout。上线后你可以在仪表盘中编辑素材。"
-    },
-    "checkout": {
-      "successTitle": "已收到付款",
-      "successBody": "Stripe 正在确认付款。Webhook 激活后，你的广告会自动开始投放。",
-      "dashboardCta": "查看广告仪表盘",
-      "cancelTitle": "Checkout 已取消",
-      "cancelBody": "没有扣款。你可以调整广告后再试一次。"
-    },
-    "sections": {
-      "audience": {
-        "title": "开发者优先的受众",
-        "body": "Petdex 访客是开发者和 AI 工具用户，他们正在浏览围绕 Codex 构建的目录，愿意安装工具并评估付费订阅。"
-      },
-      "placement": {
-        "title": "克制的赞助卡片",
-        "body": "广告会以明确标记的卡片出现在宠物卡片之间，融入图库节奏，不打断浏览。"
-      },
-      "billing": {
-        "title": "保证可见曝光",
-        "body": "你购买的是保证可见曝光。我们也会报告悬停、点击、CTR 和平均可见时长。"
-      }
-    },
-    "acceptableUse": {
-      "title": "可接受使用政策",
-      "items": {
-        "malware": "不得包含恶意软件、钓鱼、诈骗、误导下载或凭据收集。",
-        "adult": "不得包含成人、性或露骨内容。",
-        "hate": "不得包含仇恨、骚扰、歧视或辱骂内容。",
-        "illegal": "不得宣传非法产品、受监管商品或违反适用法律的服务。",
-        "impersonation": "不得冒充个人、公司、社区或开源项目。",
-        "misleading": "不得包含误导性的 AI 声明、虚假基准或歪曲工具功能的广告。"
-      }
-    },
-    "legal": {
-      "eyebrow": "法律提示",
-      "title": "Petdex 可以移除不符合社区预期的广告。",
-      "body": "我们保留暂停、删除或拒绝任何不符合 Petdex 政策、社区预期或产品质量标准的广告的权利。被移除的广告不予退款。"
-    },
-    "form": {
-      "companyName": "公司名称",
-      "contactEmail": "联系邮箱",
-      "title": "广告标题",
-      "description": "描述",
-      "creativeDisclosure": "你的广告标题、图片和描述会显示在 Petdex 信息流中的赞助卡片里。",
-      "destinationUrl": "目标 URL",
-      "image": "广告图片",
-      "imageCta": "上传 PNG、JPG 或 WebP 素材",
-      "imageHelp": "最大 10 MB。建议使用清晰的产品图、Logo 卡片或截图。",
-      "previewTitle": "广告预览",
-      "previewHelp": "你的赞助卡片会以这种形式显示在 Petdex 信息流中。预览时链接已禁用。",
-      "previewFallbackTitle": "你的广告标题",
-      "previewFallbackDescription": "这里会显示你的产品简介。",
-      "package": "选择广告系列规模",
-      "pricingTrust": "我们只计算可见曝光：广告 50% 以上区域连续可见 2 秒。",
-      "utmTitle": "自定义 UTM 设置",
-      "utmHelp": "可选。如果留空，Petdex 会向广告链接添加 utm_source=petdex。",
-      "legalAccept": "我接受 Petdex 可以暂停或删除不符合政策的广告，并且此类删除不予退款。",
-      "signIn": "登录后提交广告",
-      "submit": "继续到 Stripe checkout",
-      "status": {
-        "uploading": "正在上传图片",
-        "creating": "正在创建广告系列",
-        "checkout": "正在打开 checkout"
-      },
-      "errors": {
-        "imageRequired": "请先上传广告图片。",
-        "imageTooLarge": "图片必须小于或等于 10 MB。",
-        "submitFailed": "无法创建广告系列。",
-        "checkoutFailed": "无法启动 Stripe checkout。",
-        "network": "网络错误。请重试。"
-      }
-    },
-    "create": {
-      "metadata": {
-        "title": "创建 Petdex 广告系列",
-        "description": "制作 Petdex 赞助卡片，选择预付曝光套餐，并继续到 Stripe checkout。"
-      },
-      "eyebrow": "广告系列设置",
-      "title": "创建你的赞助卡片。",
-      "body": "为你的 Petdex 广告系列添加素材、目标地址、跟踪字段和预付曝光套餐。",
-      "backToLanding": "返回广告介绍",
-      "help": {
-        "creative": {
-          "title": "使用清晰素材",
-          "body": "Logo 卡片、产品截图或简洁的产品视觉在 Petdex 信息流中效果最好。"
-        },
-        "review": {
-          "title": "保持社区安全",
-          "body": "广告仍需遵守 Petdex 政策；误导或伤害社区的广告可能会被移除。"
-        },
-        "billing": {
-          "title": "Checkout 为预付费",
-          "body": "创建广告系列后由 Stripe 收款。付款激活后开始交付。"
-        }
-      }
-    },
-    "card": {
-      "sponsored": "赞助",
-      "cta": "访问赞助商",
-      "dismiss": "隐藏赞助卡片"
-    },
-    "dashboard": {
-      "metadata": {
-        "title": "广告仪表盘 | Petdex",
-        "description": "查看你的 Petdex 广告系列、花费、状态和预付曝光交付情况。"
-      },
-      "eyebrow": "广告主仪表盘",
-      "title": "你的 Petdex 广告系列",
-      "body": "跟踪每张赞助卡片的状态、预付曝光交付和剩余库存。",
-      "newCampaign": "购买另一个广告系列",
-      "editCreative": "编辑素材",
-      "progress": "交付进度",
-      "destination": "目标 URL",
-      "created": "创建于 {date}",
-      "activated": "激活于 {date}",
-      "removedFallback": "该广告系列因不符合 Petdex 政策而被移除。",
-      "checkout": {
-        "successTitle": "已收到付款",
-        "successBody": "Stripe 正在确认付款。Webhook 激活后，你的广告会自动开始投放。"
-      },
-      "summary": {
-        "total": "广告系列",
-        "active": "活跃",
-        "served": "曝光",
-        "clicks": "点击",
-        "ctr": "CTR"
-      },
-      "metrics": {
-        "package": "套餐",
-        "served": "已曝光",
-        "remaining": "剩余",
-        "spend": "花费",
-        "hovers": "悬停",
-        "clicks": "点击",
-        "ctr": "CTR",
-        "avgTime": "平均可见时长"
-      },
-      "empty": {
-        "eyebrow": "还没有广告系列",
-        "title": "启动你的第一张赞助卡片",
-        "body": "提交素材，选择预付曝光套餐，并在 Stripe 确认付款后开始触达开发者。",
-        "cta": "创建广告系列"
-      },
-      "edit": {
-        "title": "编辑广告系列",
-        "body": "更改素材、目标地址或跟踪字段。活跃广告系列的修改会立即生效，并且仍需遵守 Petdex 广告政策。",
-        "titleLabel": "广告标题",
-        "descriptionLabel": "描述",
-        "destinationUrlLabel": "目标 URL",
-        "imageLabel": "广告图片",
-        "imageCta": "上传替换素材",
-        "imageHelp": "PNG、JPG 或 WebP。最大 10 MB。",
-        "currentImage": "预览",
-        "save": "保存更改",
-        "saved": "广告系列已保存。",
-        "saving": "正在保存广告系列",
-        "uploading": "正在上传图片",
-        "cancel": "取消",
-        "backToDashboard": "返回仪表盘",
-        "delivery": "交付进度",
-        "deliveryBody": "已交付 {served} / {total} 次曝光。",
-        "metadata": {
-          "title": "编辑广告系列 | Petdex",
-          "description": "更新你的 Petdex 赞助卡片素材、目标地址和跟踪字段。"
-        },
-        "notEditable": {
-          "title": "该广告系列无法编辑",
-          "body": "已删除或已移除的广告系列不能更改。如果要运行新的赞助卡片，请创建新的广告系列。"
-        },
-        "utmTitle": "自定义 UTM 设置",
-        "utmHelp": "留空可清除字段。如果 utm_source 为空，Petdex 会为点击添加 utm_source=petdex。",
-        "errors": {
-          "imageTooLarge": "图片必须小于或等于 10 MB。",
-          "nothingChanged": "保存前请至少更改一个字段。",
-          "submitFailed": "无法更新广告系列。",
-          "uploadFailed": "图片上传失败。",
-          "network": "网络错误。请重试。",
-          "imageInvalid": "请上传有效的 Petdex 广告图片。",
-          "destinationInvalid": "请输入有效的 HTTPS 目标 URL。",
-          "titleRequired": "请填写广告标题。",
-          "descriptionRequired": "请填写广告描述。"
-        }
-      },
-      "chart": {
-        "label": "曝光随时间变化",
-        "empty": "还没有记录到活动。",
-        "exactValues": "精确数值",
-        "bucket": "时间段",
-        "impressions": "曝光",
-        "hovers": "悬停",
-        "clicks": "点击",
-        "windows": {
-          "eightHours": "最近 8 小时",
-          "day": "最近 24 小时",
-          "week": "最近一周",
-          "month": "最近一月"
-        }
-      }
-    }
   },
   "feedback": {
     "trigger": "反馈",

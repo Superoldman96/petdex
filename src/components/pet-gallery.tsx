@@ -1,10 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   type CSSProperties,
-  Fragment,
   memo,
   useCallback,
   useEffect,
@@ -15,7 +13,6 @@ import {
 import { Check, Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
-import type { PublicFeedAd } from "@/lib/ads/queries";
 import { COLOR_FAMILIES, type ColorFamily } from "@/lib/color-families";
 import { formatBatchLabel, getBatchKey } from "@/lib/dex-batch";
 import { formatLocalizedNumber } from "@/lib/format-number";
@@ -82,7 +79,6 @@ type PetGalleryProps = {
   initial: InitialSearchPayload;
   totalPets: number;
   caughtSlugs?: string[];
-  ads?: PublicFeedAd[];
 };
 
 type SortKey = "curated" | "popular" | "installed" | "alpha" | "recent";
@@ -96,14 +92,6 @@ const SORT_LABELS: Record<SortKey, string> = {
 };
 
 const PAGE_SIZE = 24;
-
-const FeedAdSlot = dynamic<{ ad: PublicFeedAd }>(
-  () => import("@/components/ads/feed-ad-slot").then((mod) => mod.FeedAdSlot),
-  {
-    loading: FeedAdSlotLoading,
-    ssr: false,
-  },
-);
 
 const FAMILY_DOT: Record<ColorFamily, string> = {
   red: "#ef4444",
@@ -124,7 +112,6 @@ export function PetGallery({
   initial,
   totalPets,
   caughtSlugs,
-  ads = [],
 }: PetGalleryProps) {
   const locale = useLocale();
   const isZh = locale === "zh";
@@ -545,21 +532,16 @@ export function PetGallery({
           loadingPage && "opacity-60 transition",
         )}
       >
-        {pets.map((pet, index) => {
-          const ad = adForPetIndex(ads, index);
-          return (
-            <Fragment key={pet.slug}>
-              <PetCard
-                pet={pet}
-                index={index}
-                stateCount={stateCount}
-                dexNumber={pet.dexNumber ?? null}
-                caught={caughtSet.has(pet.slug)}
-              />
-              {ad ? <FeedAdSlot ad={ad} /> : null}
-            </Fragment>
-          );
-        })}
+        {pets.map((pet, index) => (
+          <PetCard
+            key={pet.slug}
+            pet={pet}
+            index={index}
+            stateCount={stateCount}
+            dexNumber={pet.dexNumber ?? null}
+            caught={caughtSet.has(pet.slug)}
+          />
+        ))}
       </div>
 
       {pets.length === 0 && !loadingPage ? (
@@ -696,57 +678,6 @@ function FilterGroup({
       <div className="flex flex-wrap gap-1.5">{children}</div>
     </div>
   );
-}
-
-function FeedAdSlotLoading() {
-  return (
-    <article
-      aria-hidden="true"
-      className="flex h-full min-h-[30rem] flex-col overflow-hidden rounded-3xl border border-border-base bg-surface/76 shadow-sm shadow-blue-950/5 backdrop-blur"
-    >
-      <div className="flex min-h-[46px] items-center justify-between border-border-base border-b px-5 py-3">
-        <div className="h-3 w-20 rounded bg-surface-muted" />
-        <div className="size-4 rounded-full bg-surface-muted" />
-      </div>
-      <div className="h-[210px] max-h-[210px] bg-surface-muted/60 md:h-[190px] md:max-h-[190px] 2xl:h-[210px] 2xl:max-h-[210px]" />
-      <div className="flex flex-1 flex-col gap-3 border-border-base border-t px-5 pt-4 pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="h-5 w-32 rounded bg-surface-muted" />
-          <div className="h-3 w-8 rounded bg-surface-muted" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-3 w-full rounded bg-surface-muted/80" />
-          <div className="h-3 w-3/4 rounded bg-surface-muted/80" />
-        </div>
-        <div className="h-5 w-20 rounded-full bg-surface-muted/80" />
-        <div className="mt-1 flex gap-1.5">
-          <div className="h-3 w-20 rounded bg-surface-muted/70" />
-          <div className="h-3 w-16 rounded bg-surface-muted/70" />
-        </div>
-        <div className="mt-2 h-5 border-border-base border-t pt-2" />
-      </div>
-      <div className="mt-auto min-h-[52px] border-border-base border-t px-5 py-2" />
-    </article>
-  );
-}
-
-function adForPetIndex(
-  ads: PublicFeedAd[],
-  index: number,
-): PublicFeedAd | null {
-  if (ads.length === 0) return null;
-  // Density scales inversely with inventory: with a single advertiser
-  // any stride feels spammy, so we space generously and cap to 3 slots
-  // total. With a healthier roster the slots tighten back up.
-  const stride = ads.length === 1 ? 40 : ads.length <= 3 ? 24 : 16;
-  const maxSlots = ads.length === 1 ? 3 : 8;
-  const petPosition = index + 1;
-  if (petPosition < 8) return null;
-  if (petPosition !== 8 && (petPosition - 8) % stride !== 0) return null;
-  const slotNumber = Math.floor((petPosition - 8) / stride);
-  if (slotNumber >= maxSlots) return null;
-  const adIndex = slotNumber % ads.length;
-  return ads[adIndex] ?? null;
 }
 
 function isAbortError(error: unknown): boolean {

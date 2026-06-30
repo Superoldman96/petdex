@@ -17,14 +17,8 @@ describe("route cost helpers", () => {
   });
 
   it("normalizes app dynamic route ids before storing buckets", () => {
-    expect(
-      normalizeRouteCostPath("/en/advertise/dashboard/ad_abc123def/edit"),
-    ).toBe("/advertise/dashboard/[campaignId]/edit");
     expect(normalizeRouteCostPath("/api/my-pets/pet_abc123def/edit")).toBe(
       "/api/my-pets/[id]/edit",
-    );
-    expect(normalizeRouteCostPath("/api/ads/ad_abc123def")).toBe(
-      "/api/ads/[id]",
     );
     expect(normalizeRouteCostPath("/api/feedback/fb_abc123def")).toBe(
       "/api/feedback/[id]",
@@ -43,10 +37,6 @@ describe("route cost helpers", () => {
     expect(normalizeRouteCostPath("/en/collections/opengraph-image")).toBe(
       "/collections/opengraph-image",
     );
-    expect(normalizeRouteCostPath("/api/ads/checkout")).toBe(
-      "/api/ads/checkout",
-    );
-    expect(normalizeRouteCostPath("/api/ads/event")).toBe("/api/ads/event");
   });
 
   it("buckets unmatched paths without preserving random segments", () => {

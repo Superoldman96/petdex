@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { getActiveFeedAds } from "@/lib/ads/queries";
 import {
   getCollectionsBySlugs,
   type PetCollectionWithPets,
@@ -89,14 +88,12 @@ export default async function Home({
     "franchise-jojos-bizarre-adventure",
   ];
 
-  const [heroPets, initialSearch, collections, feedAds, randomPet] =
-    await Promise.all([
-      getFeaturedPetsWithMetrics(6),
-      searchPets({ sort: "installed", limit: HOME_INITIAL_GALLERY_LIMIT }),
-      getCollectionsBySlugs(LANDING_COLLECTION_ORDER, 6),
-      getActiveFeedAds(6),
-      getRandomPet(),
-    ]);
+  const [heroPets, initialSearch, collections, randomPet] = await Promise.all([
+    getFeaturedPetsWithMetrics(6),
+    searchPets({ sort: "installed", limit: HOME_INITIAL_GALLERY_LIMIT }),
+    getCollectionsBySlugs(LANDING_COLLECTION_ORDER, 6),
+    getRandomPet(),
+  ]);
   const totalPets = initialSearch.total;
   const formattedTotalPets = formatLocalizedNumber(totalPets, locale);
   const showWechatCommunity = isZh;
@@ -220,11 +217,7 @@ export default async function Home({
         className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-5 py-12 md:px-8 md:py-16"
       >
         {totalPets > 0 ? (
-          <PetGallery
-            initial={initialSearch}
-            totalPets={totalPets}
-            ads={feedAds}
-          />
+          <PetGallery initial={initialSearch} totalPets={totalPets} />
         ) : null}
       </section>
 

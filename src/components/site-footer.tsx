@@ -28,13 +28,6 @@ export function SiteFooter() {
             {t("takedown")}
           </Link>
           <Link
-            href="/advertise"
-            prefetch={false}
-            className="underline underline-offset-4 transition hover:text-foreground"
-          >
-            {t("advertise")}
-          </Link>
-          <Link
             href="/brand"
             prefetch={false}
             className="underline underline-offset-4 transition hover:text-foreground"

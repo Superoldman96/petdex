@@ -1,9 +1,6 @@
 type MessageNode = Record<string, unknown>;
 
 export const CLIENT_MESSAGE_PATHS = [
-  "advertise.card",
-  "advertise.dashboard.edit",
-  "advertise.form",
   "claim",
   "collectionActionMenu",
   "collectionDetail",

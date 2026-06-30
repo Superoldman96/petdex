@@ -140,36 +140,6 @@ export const presignRatelimit = createRatelimit({
   prefix: "petdex:presign",
 });
 
-export const adCampaignRatelimit = createRatelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(10, "1 h"),
-  prefix: "petdex:ad-campaign",
-});
-
-export const adCampaignEditRatelimit = createRatelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(10, "24 h"),
-  prefix: "petdex:ad-campaign-edit",
-});
-
-export const adCheckoutRatelimit = createRatelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(20, "1 h"),
-  prefix: "petdex:ad-checkout",
-});
-
-export const adImpressionRatelimit = createRatelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(240, "1 h"),
-  prefix: "petdex:ad-impression",
-});
-
-export const adEventRatelimit = createRatelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(600, "1 h"),
-  prefix: "petdex:ad-event",
-});
-
 // CLI bearer verification by IP — stops blind floods of bogus tokens
 // burning Clerk userinfo quota.
 export const cliVerifyRatelimit = createRatelimit({

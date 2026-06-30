@@ -56,8 +56,6 @@ describe("shouldBypassClerkMiddleware", () => {
       "/es/submit",
       "/my-pets",
       "/my-feedback",
-      "/advertise/dashboard",
-      "/advertise/new",
       "/api/manifest/full",
       "/api/me/header-state",
       "/api/profile",

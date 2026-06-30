@@ -79,9 +79,6 @@ export function MobileHeaderMenu({ hideSubmitCta = false, onClose }: Props) {
         <MobileLink href={href("/requests")} onClick={onClose}>
           {t("requests")}
         </MobileLink>
-        <MobileLink href={href("/advertise")} onClick={onClose}>
-          {t("advertise")}
-        </MobileLink>
         <MobileLink href={href("/built-with")} onClick={onClose}>
           <span className="inline-flex items-center gap-2">
             {t("builtWith")}

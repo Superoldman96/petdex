@@ -30,7 +30,6 @@ const SEO_SOURCE_FILES = [
   "src/components/json-ld.tsx",
   "src/app/[locale]/page.tsx",
   "src/app/[locale]/about/page.tsx",
-  "src/app/[locale]/advertise/page.tsx",
   "src/app/[locale]/brand/page.tsx",
   "src/app/[locale]/built-with/page.tsx",
   "src/app/[locale]/collections/page.tsx",

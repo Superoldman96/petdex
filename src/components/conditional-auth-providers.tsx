@@ -17,9 +17,6 @@ function isEagerAuthPath(pathname: string | null): boolean {
     path === "/submit" ||
     path === "/my-feedback" ||
     path.startsWith("/my-feedback/") ||
-    path === "/advertise/new" ||
-    path === "/advertise/dashboard" ||
-    path.startsWith("/advertise/dashboard/") ||
     path.startsWith("/u/")
   );
 }
